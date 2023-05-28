@@ -2,7 +2,7 @@ package login_SignUp_GUI;
 
 import SQL_connection.AuthenticationService;
 import clientServer.SendToServer;
-import clientServer.Server;
+import clientServer.SocketClient;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -11,18 +11,15 @@ import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
-import java.net.Socket;
 import java.security.NoSuchAlgorithmException;
 import javax.swing.*;
 
 /**
  * @author YairF
  */
-public final class LoginGUI extends AuthenticationChecker implements Server, ActionListener {
+public final class LoginGUI extends AuthenticationChecker implements ActionListener {
 
-    private Socket clientSocket;
-    private ObjectOutputStream out;
-    private ObjectInputStream in;
+    private final SocketClient socketClient;
     private SendToServer toServer;
     private JFrame frame;
     private JPanel panel;
@@ -36,7 +33,12 @@ public final class LoginGUI extends AuthenticationChecker implements Server, Act
     public LoginGUI(JFrame frame) {
         this.frame = frame;
         this.panel = new JPanel();
+        this.socketClient = new SocketClient();
         createLogin();
+    }
+
+    public SocketClient getSocketClient() {
+        return socketClient;
     }
 
     public JTextField getEmail() {
@@ -118,13 +120,13 @@ public final class LoginGUI extends AuthenticationChecker implements Server, Act
 
     private void actionLoginButton() {
         try {
-            connectToServer();
+            getSocketClient().connectToServer();
             String email = getEmail().getText();
             String password = getPassword().getText();
 
 
             //ChecksAndSendsEmailGUI object
-            ChecksAndSendsEmailGUI checksAndSendsEmailGUI = new ChecksAndSendsEmailGUI(email, frame, panel);
+            ChecksAndSendsEmailGUI checksAndSendsEmailGUI = new ChecksAndSendsEmailGUI(email, frame, panel, socketClient);
 
             /**
              * If the password and email are correct, go to the socket server and ask if such an email exists in the system.
@@ -133,10 +135,9 @@ public final class LoginGUI extends AuthenticationChecker implements Server, Act
              */
             if (isValidEmail(email) && isValidPassword(password)) {
                 initializeCustomer("checkEmail", email);
-                out.writeObject(toServer);
-                out.flush();
+                getSocketClient().outToServerObject(toServer);
 
-                AuthenticationService inputPassword = (AuthenticationService) in.readObject();
+                AuthenticationService inputPassword = getSocketClient().inFromServerObject();
 
                 /**
                  * If isPasswordExists() == true, this means that there is such an email in the system.
@@ -150,13 +151,14 @@ public final class LoginGUI extends AuthenticationChecker implements Server, Act
                          * we will save the login attempt of that user in the database.
                          */
                         initializeCustomer("insertToLoginAttempts", email);
-                        out.writeObject(toServer);
-                        out.flush();
+                        getSocketClient().outToServerObject(toServer);
                         checksAndSendsEmailGUI.showLoginErrorNotification("The email or password does not match.");
                     }
                 } else {
-                    //Otherwise, if such an email does not exist, because there is no password we found in the database,
-                    // then the user is sent a message to register in the system.
+                    /**
+                     * Otherwise, if such an email does not exist, because there is no password we found in the database,
+                     * then the user is sent a message to register in the system.
+                     */
                     checksAndSendsEmailGUI.showLoginErrorNotification("You are not registered with us!\nGo to signup to register in the system.");
                 }
             } else {
@@ -183,29 +185,7 @@ public final class LoginGUI extends AuthenticationChecker implements Server, Act
         toServer.setRequestType(requestType);
     }
 
-    @Override
-    public void connectToServer() {
-        // connect to the server
-        try {
-            clientSocket = new Socket("localhost", PORT); // replace with your server address and port number
-            OutputStream outputStream = clientSocket.getOutputStream();
-            out = new ObjectOutputStream(outputStream);
-            in = new ObjectInputStream(clientSocket.getInputStream());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 
     //TODO: ברגע שהמשתמש יוצא מהמערכת אז לנתק אותו מהשרת
-    @Override
-    public void closeConnection() {
-        try {
-            out.close();
-            in.close();
-            clientSocket.close();
-            clientSocket.shutdownOutput();  //מאותת לשרת שסיימתי לשלוח לו נתונים
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
+
 }

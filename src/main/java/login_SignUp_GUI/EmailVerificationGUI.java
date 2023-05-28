@@ -1,5 +1,6 @@
 package login_SignUp_GUI;
 
+import clientServer.SocketClient;
 import login_to_verify_Email.VerificationProperties;
 
 import javax.swing.*;
@@ -9,6 +10,7 @@ import java.awt.event.ActionListener;
 
 public class EmailVerificationGUI implements ActionListener {
     //TODO: מסך בידקת סיסמה שנשלחה לאימייל
+    private final SocketClient socketClient;
     private JFrame frame;
     private JPanel panel = new JPanel();
     private JLabel title;
@@ -17,13 +19,19 @@ public class EmailVerificationGUI implements ActionListener {
     private VerificationProperties properties;
 
     /**
-     * @param properties - An object that contains the properties of the authentication.
+     * @param properties   - An object that contains the properties of the authentication.
      * @param frame
+     * @param socketClient
      */
-    public EmailVerificationGUI(VerificationProperties properties, JFrame frame) {
+    public EmailVerificationGUI(VerificationProperties properties, JFrame frame, SocketClient socketClient) {
+        this.socketClient = socketClient;
         setFrame(frame);
         setProperties(properties);
         initScreen();
+    }
+
+    public SocketClient getSocketClient() {
+        return socketClient;
     }
 
     public JFrame getFrame() {
@@ -107,7 +115,7 @@ public class EmailVerificationGUI implements ActionListener {
             if ((this.properties.getVerificationCode() == Integer.parseInt(verifyThePassword.getText()))
                     && (System.currentTimeMillis() <= this.properties.getEXPIRATION_TIME())) {
                 getFrame().dispose();
-                new HomeGUI();
+                new HomeGUI(getSocketClient());
             } else {
                 JOptionPane.showMessageDialog(null, "Match failed!");
             }

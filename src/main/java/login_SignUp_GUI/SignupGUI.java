@@ -2,6 +2,7 @@ package login_SignUp_GUI;
 
 import clientServer.SendToServer;
 import clientServer.Server;
+import clientServer.SocketClient;
 import com.toedter.calendar.JDateChooser;
 
 import java.awt.Color;
@@ -21,13 +22,12 @@ import java.net.Socket;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Date;
 
-public final class SignupGUI extends AuthenticationChecker implements Server, ActionListener {
+//TODO: להעביר שחיבור לשרת יהיה דרך האובייקט ולא דרך הממשק
+public final class SignupGUI extends AuthenticationChecker implements ActionListener {
 
     private final JFrame frame;
     private final JPanel panel;
-    private Socket clientSocket;
-    private ObjectOutputStream out;
-    private ObjectInputStream in;
+    private final SocketClient socketClient;
     private JLabel passwordLabel;
     private JLabel confirmPasswordLabel;
     private JLabel emailLabel;
@@ -52,7 +52,12 @@ public final class SignupGUI extends AuthenticationChecker implements Server, Ac
     public SignupGUI(JFrame frame) {
         this.frame = frame;
         this.panel = new JPanel();
+        this.socketClient = new SocketClient();
         createSignup();
+    }
+
+    public SocketClient getSocketClient() {
+        return socketClient;
     }
 
     public JTextField getPhoneNumber() {
@@ -230,7 +235,7 @@ public final class SignupGUI extends AuthenticationChecker implements Server, Ac
 
     private void actionSignupButton() {
         try {
-            connectToServer();
+            getSocketClient().connectToServer();
             String inputServer;
             String firstN = getFirstName().getText();
             String lastN = getLastName().getText();
@@ -243,7 +248,7 @@ public final class SignupGUI extends AuthenticationChecker implements Server, Ac
             String password = getPasswordJP().getText();
             String confirmPass = getConfirmPasswordJP().getText();
 
-            ChecksAndSendsEmailGUI checksAndSendsEmailGUI = new ChecksAndSendsEmailGUI(email, frame, panel);
+            ChecksAndSendsEmailGUI checksAndSendsEmailGUI = new ChecksAndSendsEmailGUI(email, frame, panel, socketClient);
 
             //TODO: לבדוק אם יש אימייל כזה קיים במערכת
 
@@ -256,10 +261,9 @@ public final class SignupGUI extends AuthenticationChecker implements Server, Ac
 
                     initializeCustomer("checkEmail", email, password, salt, date,
                             firstN, lastN, residentialAddress, number);
-                    out.writeObject(toServer);
-                    out.flush();
+                    getSocketClient().outToServerObject(toServer);
 
-                    inputServer = (String) in.readObject();
+                    inputServer = getSocketClient().inFromServerString();
 
                     /**
                      * If there is no password, it means that such an email does not exist and the user can register.
@@ -327,29 +331,5 @@ public final class SignupGUI extends AuthenticationChecker implements Server, Ac
         toServer.setPassword(password);
         toServer.setSalt(salt);
         toServer.setRequestType(requestType);
-    }
-
-    @Override
-    public void connectToServer() {
-        // connect to the server
-        try {
-            clientSocket = new Socket("localhost", PORT); // replace with your server address and port number
-            OutputStream outputStream = clientSocket.getOutputStream();
-            out = new ObjectOutputStream(outputStream);
-            in = new ObjectInputStream(clientSocket.getInputStream());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Override
-    public void closeConnection() {
-        try {
-            out.close();
-            in.close();
-            clientSocket.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 }

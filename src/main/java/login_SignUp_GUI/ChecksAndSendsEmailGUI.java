@@ -1,5 +1,6 @@
 package login_SignUp_GUI;
 
+import clientServer.SocketClient;
 import login_to_verify_Email.LoginToVerify;
 import login_to_verify_Email.VerificationProperties;
 
@@ -11,11 +12,16 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class ChecksAndSendsEmailGUI {
+    private final SocketClient socketClient;
     private Thread thread;
     private JFrame frame;
     private JPanel panel;
     private String email;
     private boolean done = false;
+
+    public SocketClient getSocketClient() {
+        return socketClient;
+    }
 
     public JFrame getFrame() {
         return frame;
@@ -49,10 +55,11 @@ public class ChecksAndSendsEmailGUI {
         this.done = done;
     }
 
-    public ChecksAndSendsEmailGUI(String email, JFrame frame, JPanel panel) {
+    public ChecksAndSendsEmailGUI(String email, JFrame frame, JPanel panel, SocketClient socketClient) {
         //frame.setSize(new Dimension(400, 300));
         this.frame = frame;
         this.panel = panel;
+        this.socketClient = socketClient;
         setEmail(email);
     }
 
@@ -80,7 +87,7 @@ public class ChecksAndSendsEmailGUI {
                         Thread emailThread = new Thread(() -> {
                             VerificationProperties verifiedPassword;
                             verifiedPassword = l.sendCodeInEmail();
-                            new EmailVerificationGUI(verifiedPassword, getFrame());
+                            new EmailVerificationGUI(verifiedPassword, getFrame(), getSocketClient());
                             setDone(true);
                         });
                         setThread(emailThread);

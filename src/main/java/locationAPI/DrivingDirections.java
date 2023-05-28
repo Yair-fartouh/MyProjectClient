@@ -30,7 +30,7 @@ public class DrivingDirections {
                 .uri(URI.create("https://driving-directions1.p.rapidapi.com/get-directions?origin=" +
                         originLAT + "%2C%20" + originLNG + "&destination=" + destinationLAT + "%2C%20" +
                         destinationLNG + "&avoid_routes=tolls%2Cferries&country=us&language=en"))
-                .header("X-RapidAPI-Key", "YOUR TOKEN")
+                .header("X-RapidAPI-Key", "5c9eaff043msh30c61f17d646d8fp1d5f4ajsn528698b21cc0")
                 .header("X-RapidAPI-Host", "driving-directions1.p.rapidapi.com")
                 .method("GET", HttpRequest.BodyPublishers.noBody())
                 .build();

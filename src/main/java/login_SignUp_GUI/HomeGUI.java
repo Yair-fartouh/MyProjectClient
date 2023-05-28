@@ -1,11 +1,18 @@
 package login_SignUp_GUI;
 
+import DTO.VolunteerDTO;
+import clientServer.SendToServer;
+import clientServer.SocketClient;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.IOException;
 
 public class HomeGUI implements ActionListener {
 
+    private final SocketClient socketClient;
+    private SendToServer toServer;
     private JFrame frame;
     private JLabel title;
     private JPanel panel;
@@ -13,13 +20,18 @@ public class HomeGUI implements ActionListener {
     private JPanel historyPanel;
     private JButton button;
 
-    public HomeGUI() {
+    public HomeGUI(SocketClient socketClient) {
         this.frame = new JFrame();
         this.panel = new JPanel();
         this.informationPanel = new JPanel();
         this.historyPanel = new JPanel();
         this.button = new JButton();
+        this.socketClient = socketClient;
         createHomePage();
+    }
+
+    public SocketClient getSocketClient() {
+        return socketClient;
     }
 
     public JLabel getTitle(String text) {
@@ -27,6 +39,13 @@ public class HomeGUI implements ActionListener {
         title.setBounds(70, 10, 210, 50);
         title.setFont(new Font("Serif", Font.BOLD, 28));
         return title;
+    }
+
+    public JLabel getName(String name) {
+        JLabel subtitle = new JLabel("Hello " + name + "!");
+        subtitle.setBounds(50, 60, 210, 30);
+        subtitle.setFont(new Font("Serif", Font.PLAIN, 16));
+        return subtitle;
     }
 
     public JButton getButton(JPanel thisPanel) {
@@ -94,6 +113,8 @@ public class HomeGUI implements ActionListener {
         panel.setLayout(null);
 
         panel.add(getTitle("Volunteer Center"));
+        //TODO: לשנות את השם למה שקיבלנו מהשרת
+        panel.add(getName("Test"));
         panel.add(getButton(panel));
 
         panel.setVisible(true);
@@ -103,16 +124,26 @@ public class HomeGUI implements ActionListener {
     }
 
     public void personalInformation() {
-        informationPanel.setLayout(null);
+        try {
+            informationPanel.setLayout(null);
 
-        informationPanel.add(getTitle("Information"));
-        informationPanel.add(getButton(informationPanel));
+            informationPanel.add(getTitle("Information"));
+            informationPanel.add(getButton(informationPanel));
+            initializeCustomer("Information");
+            getSocketClient().outToServerObject(toServer);
 
-        informationPanel.setVisible(true);
-        panel.setVisible(false);
-        historyPanel.setVisible(false);
-        frame.add(informationPanel);
+            VolunteerDTO volunteerDTO = getSocketClient().inFromServerDTO();
+            System.out.println(volunteerDTO.getEmail());
+
+            informationPanel.setVisible(true);
+            panel.setVisible(false);
+            historyPanel.setVisible(false);
+            frame.add(informationPanel);
+        } catch (IOException | ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
+
     public void history() {
         historyPanel.setLayout(null);
 
@@ -130,8 +161,16 @@ public class HomeGUI implements ActionListener {
 
     }
 
+
+    public void initializeCustomer(String requestType) {
+        toServer = new SendToServer();
+        toServer.setTypeClient("VOLUNTEER");
+        toServer.setLoginOrRegister("HOME");
+        toServer.setRequestType(requestType);
+    }
+
     //TODO: למחוק את הפונקציה הראשית
     public static void main(String[] args) {
-        new HomeGUI();
+        new HomeGUI(new SocketClient());
     }
 }
