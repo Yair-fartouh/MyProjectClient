@@ -21,6 +21,10 @@ public class DrivingDirections {
     private double km;
     private int meters;
 
+    /**
+     * TOKEN 1 - 1a30703c36msh7d4953d5a6e903ap13e939jsnc18ed6efcffc   ==> github -> hadarbarebi@proton.me
+     * TOKEN 2 - 5c9eaff043msh30c61f17d646d8fp1d5f4ajsn528698b21cc0   ==> yairlimudim@gmail.com
+     */
     public String GetDirections(String originLAT,
                                 String originLNG,
                                 String destinationLAT,
@@ -30,7 +34,7 @@ public class DrivingDirections {
                 .uri(URI.create("https://driving-directions1.p.rapidapi.com/get-directions?origin=" +
                         originLAT + "%2C%20" + originLNG + "&destination=" + destinationLAT + "%2C%20" +
                         destinationLNG + "&avoid_routes=tolls%2Cferries&country=us&language=en"))
-                .header("X-RapidAPI-Key", "5c9eaff043msh30c61f17d646d8fp1d5f4ajsn528698b21cc0")
+                .header("X-RapidAPI-Key", "1a30703c36msh7d4953d5a6e903ap13e939jsnc18ed6efcffc")
                 .header("X-RapidAPI-Host", "driving-directions1.p.rapidapi.com")
                 .method("GET", HttpRequest.BodyPublishers.noBody())
                 .build();
@@ -40,7 +44,9 @@ public class DrivingDirections {
 
         JSONObject jsonObj = new JSONObject(response.body());
         JSONObject item = jsonObj.getJSONObject("data").getJSONArray("best_routes").getJSONObject(0);
+        String link = jsonObj.getJSONObject("data").optString("directions_link");
 
+        System.out.println(link);
         //this.distance = item.optString("distance_label");
         this.duration = item.optString("duration_label");
         this.meters = item.getInt("distance_meters");
@@ -53,7 +59,7 @@ public class DrivingDirections {
      *
      * @param str - Gets a string containing the travel time.
      */
-    public void conversion(String str) {
+    public Time conversion(String str) {
         int indexHour;
         int indexMinute;
 
@@ -72,13 +78,15 @@ public class DrivingDirections {
         System.out.println("Minute: " + this.minute);
         System.out.println("Meters: " + this.meters);
         System.out.println("km: " + this.km);
+
+        return new Time(this.hour, this.minute);
     }
 
-    public void start(String originLAT,
+    public Time start(String originLAT,
                       String originLNG,
                       String destinationLAT,
                       String destinationLNG) throws IOException, InterruptedException, ParseException {
 
-        conversion(GetDirections(originLAT, originLNG, destinationLAT, destinationLNG));
+        return conversion(GetDirections(originLAT, originLNG, destinationLAT, destinationLNG));
     }
 }

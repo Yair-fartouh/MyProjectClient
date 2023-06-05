@@ -68,7 +68,7 @@ public class SocketClient implements Server {
             out.close();
             in.close();
             socket.close();
-            socket.shutdownOutput();  //מאותת לשרת שסיימתי לשלוח לו נתונים
+            //socket.shutdownOutput();  //מאותת לשרת שסיימתי לשלוח לו נתונים
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

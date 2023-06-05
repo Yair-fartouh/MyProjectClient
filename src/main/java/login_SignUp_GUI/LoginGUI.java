@@ -14,9 +14,6 @@ import java.io.*;
 import java.security.NoSuchAlgorithmException;
 import javax.swing.*;
 
-/**
- * @author YairF
- */
 public final class LoginGUI extends AuthenticationChecker implements ActionListener {
 
     private final SocketClient socketClient;
@@ -98,6 +95,7 @@ public final class LoginGUI extends AuthenticationChecker implements ActionListe
         signup.addActionListener(this);
         panel.add(signup);
 
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 

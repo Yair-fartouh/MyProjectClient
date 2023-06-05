@@ -1,7 +1,8 @@
 package login_SignUp_GUI;
 
+import ExcelReader.ExcelReader;
+import ExcelReader.Location;
 import clientServer.SendToServer;
-import clientServer.Server;
 import clientServer.SocketClient;
 import com.toedter.calendar.JDateChooser;
 
@@ -15,12 +16,10 @@ import javax.swing.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
-import java.net.Socket;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Date;
+import java.util.ArrayList;
+import java.util.List;
 
 //TODO: להעביר שחיבור לשרת יהיה דרך האובייקט ולא דרך הממשק
 public final class SignupGUI extends AuthenticationChecker implements ActionListener {
@@ -42,6 +41,13 @@ public final class SignupGUI extends AuthenticationChecker implements ActionList
     private JTextField phoneNumber;
     private JTextField email;
     private JTextField address;
+    private List<Integer> preferences = new ArrayList<>();
+    private JCheckBox preference1;
+    private JCheckBox preference2;
+    private JCheckBox preference3;
+    private JCheckBox preference4;
+    private JCheckBox preference5;
+    private JCheckBox preference6;
     private JButton LoginButton;
     private JButton Signup;
     private JPasswordField passwordJP;
@@ -84,6 +90,10 @@ public final class SignupGUI extends AuthenticationChecker implements ActionList
         return address;
     }
 
+    public List<Integer> getPreferences() {
+        return preferences;
+    }
+
     public JPasswordField getPasswordJP() {
         return passwordJP;
     }
@@ -100,7 +110,7 @@ public final class SignupGUI extends AuthenticationChecker implements ActionList
         frame.setTitle("SIGNUP");
         frame.setLocation(new Point(500, 200));
         frame.add(panel);
-        frame.setSize(new Dimension(400, 560));
+        frame.setSize(new Dimension(400, 680));
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         titleLabel = new JLabel("SIGNUP");
@@ -144,7 +154,10 @@ public final class SignupGUI extends AuthenticationChecker implements ActionList
             @Override
             public void keyTyped(KeyEvent e) {
                 char c = e.getKeyChar();
-                if (!Character.isDigit(c) || phoneNumber.getText().length() >= 10) {
+                String phone = phoneNumber.getText();
+                if (phone.isEmpty() && c != '0' ||
+                        phone.length() == 1 && c != '5' ||
+                        !Character.isDigit(c) || phone.length() >= 10) {
                     e.consume(); // לא שומר במשתנה את האותיות
                 }
             }
@@ -194,21 +207,46 @@ public final class SignupGUI extends AuthenticationChecker implements ActionList
         confirmPasswordJP.addActionListener(this);
         panel.add(confirmPasswordJP);
 
+        preference1 = new JCheckBox("propulsion");
+        preference1.setBounds(100, 465, 100, 30);
+        panel.add(preference1);
+
+        preference2 = new JCheckBox("puncture");
+        preference2.setBounds(100, 500, 100, 30);
+        panel.add(preference2);
+
+        preference3 = new JCheckBox("oil/water/fuel");
+        preference3.setBounds(100, 535, 100, 30);
+        panel.add(preference3);
+
+        preference4 = new JCheckBox("locked car");
+        preference4.setBounds(210, 465, 200, 30);
+        panel.add(preference4);
+
+        preference5 = new JCheckBox("door");
+        preference5.setBounds(210, 500, 200, 30);
+        panel.add(preference5);
+
+        preference6 = new JCheckBox("area extraction");
+        preference6.setBounds(210, 535, 200, 30);
+        panel.add(preference6);
+
         Signup = new JButton("Signup");
-        Signup.setBounds(150, 470, 90, 25);
+        Signup.setBounds(150, 570, 90, 25);
         Signup.setForeground(Color.WHITE);
         Signup.setBackground(Color.BLACK);
         Signup.addActionListener(this);
         panel.add(Signup);
 
         LoginButton = new JButton("Login");
-        LoginButton.setBounds(20, 490, 90, 25);
+        LoginButton.setBounds(20, 600, 90, 25);
         LoginButton.setForeground(Color.BLUE);
         LoginButton.setBackground(Color.white);
         LoginButton.addActionListener(this);
         panel.add(LoginButton);
 
-        frame.show();
+        frame.setLocationRelativeTo(null);
+        //frame.show();
         frame.setVisible(true);
     }
 
@@ -224,6 +262,33 @@ public final class SignupGUI extends AuthenticationChecker implements ActionList
             Signup.requestFocus();
         }
         if (e.getSource() == Signup) {
+            preferences.clear();
+            if (preference1.isSelected()) {
+                preferences.add(1);
+            }
+            if (preference2.isSelected()) {
+                preferences.add(2);
+            }
+            if (preference3.isSelected()) {
+                preferences.add(3);
+            }
+            if (preference4.isSelected()) {
+                preferences.add(4);
+            }
+            if (preference5.isSelected()) {
+                preferences.add(5);
+            }
+            if (preference6.isSelected()) {
+                preferences.add(6);
+            }
+            System.out.println("User preferences: " + preferences);
+
+            preference1.setSelected(false);
+            preference2.setSelected(false);
+            preference3.setSelected(false);
+            preference4.setSelected(false);
+            preference5.setSelected(false);
+            preference6.setSelected(false);
             actionSignupButton();
         }
         if (e.getSource() == LoginButton) {
@@ -243,6 +308,7 @@ public final class SignupGUI extends AuthenticationChecker implements ActionList
             String residentialAddress = getAddress().getText();
             String number = getPhoneNumber().getText();
             String email = getEmail().getText();
+            List<Integer> allPreference = getPreferences();
 
             String salt = generateSalt();
             String password = getPasswordJP().getText();
@@ -260,7 +326,7 @@ public final class SignupGUI extends AuthenticationChecker implements ActionList
                     password = hashPassword(password, salt);
 
                     initializeCustomer("checkEmail", email, password, salt, date,
-                            firstN, lastN, residentialAddress, number);
+                            firstN, lastN, residentialAddress, number, allPreference);
                     getSocketClient().outToServerObject(toServer);
 
                     inputServer = getSocketClient().inFromServerString();
@@ -317,7 +383,7 @@ public final class SignupGUI extends AuthenticationChecker implements ActionList
     }
 
     public void initializeCustomer(String requestType, String email, String password, String salt, Date date,
-                                   String firstN, String lastN, String residentialAddress, String number) {
+                                   String firstN, String lastN, String residentialAddress, String number, List<Integer> allPreference) {
 
         toServer = new SendToServer();
         toServer.setTypeClient("VOLUNTEER");
@@ -331,5 +397,7 @@ public final class SignupGUI extends AuthenticationChecker implements ActionList
         toServer.setPassword(password);
         toServer.setSalt(salt);
         toServer.setRequestType(requestType);
+        toServer.setPreferences(allPreference);
+        toServer.setLocation(new ExcelReader().getRandomLocation());
     }
 }

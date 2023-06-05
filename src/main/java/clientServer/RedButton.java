@@ -39,7 +39,8 @@ public class RedButton implements Server, ActionListener {
         frame.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
-                System.exit(0);
+                if (clientSocket != null)
+                    closeConnection();
             }
         });
         frame.getContentPane().add(panel, BorderLayout.CENTER);
@@ -55,7 +56,10 @@ public class RedButton implements Server, ActionListener {
             @Override
             public void keyTyped(KeyEvent e) {
                 char c = e.getKeyChar();
-                if (!Character.isDigit(c) || phoneField.getText().length() >= 10) {
+                String phone = phoneField.getText();
+                if (phone.isEmpty() && c != '0' ||
+                        phone.length() == 1 && c != '5' ||
+                        !Character.isDigit(c) || phone.length() >= 10) {
                     e.consume(); // לא שומר במשתנה את האותיות
                 }
             }
@@ -95,11 +99,11 @@ public class RedButton implements Server, ActionListener {
 
         frame.add(panel);
         frame.setVisible(true);
-        connectToServer();
     }
 
     public void actionPerformed(ActionEvent e) {
         try {
+            connectToServer();
             String kindOfHelp = (String) helpComboBox.getSelectedItem();
             String phone = phoneField.getText();
 
@@ -121,8 +125,6 @@ public class RedButton implements Server, ActionListener {
 
                 out.writeObject(toServer);
                 out.flush();
-                clientSocket.shutdownInput();
-                clientSocket.shutdownOutput();
                 panel.setVisible(false);
                 sent();
             }
@@ -171,7 +173,6 @@ public class RedButton implements Server, ActionListener {
         try {
             out.close();
             clientSocket.close();
-            clientSocket.shutdownOutput();  //מאותת לשרת שסיימתי לשלוח לו נתונים
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
